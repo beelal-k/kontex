@@ -159,6 +159,7 @@ export function loadConfig(workspaceRoot: string): KontexConfig {
   try {
     const raw = readFileSync(configPath, "utf-8");
     const parsed = JSON.parse(raw);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const merged = deepMerge(DEFAULT_CONFIG as any, parsed as any) as KontexConfig;
 
     if (merged.llm && merged.llm.apiKey) {

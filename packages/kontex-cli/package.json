@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ArekBee/kontex.git",
+    "url": "git+https://github.com/ArekBee/kontex.git",
     "directory": "packages/kontex-cli"
   },
   "homepage": "https://github.com/ArekBee/kontex#readme",
@@ -41,8 +41,7 @@
     "build": "bun build ./src/index.ts --outdir ./dist --target bun --packages external",
     "test": "bun test",
     "dev": "bun --watch src/index.ts",
-    "lint": "eslint src/",
-    "prepare": "kontex hooks install || true"
+    "lint": "eslint src/"
   },
   "dependencies": {
     "kontex-core": "workspace:*",

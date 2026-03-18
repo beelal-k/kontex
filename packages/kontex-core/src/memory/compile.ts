@@ -19,6 +19,7 @@ function getEncoder(): ReturnType<typeof encoding_for_model> {
       cachedEncoder = encoding_for_model("gpt-4o-mini");
     } catch {
       // Fallback: if tiktoken fails to load, return a mock encoder
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return { encode: (text: string) => new Uint32Array(Math.ceil(text.length / 4)) } as any;
     }
   }

@@ -2,7 +2,7 @@
  * Post-commit hook handler — background LLM extraction.
  */
 
-import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync, appendFileSync } from "node:fs";
+import { writeFileSync, existsSync, unlinkSync, mkdirSync, appendFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { createHash } from "node:crypto";
 import { loadConfig } from "../config.js";

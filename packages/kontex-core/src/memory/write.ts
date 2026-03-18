@@ -12,9 +12,9 @@ import { join, dirname } from "node:path";
 import matter from "gray-matter";
 import { scanForSecrets } from "../secrets.js";
 import { embed } from "../storage/embeddings.js";
-import { getDatabase, EMBEDDING_DIM } from "../storage/db.js";
+import { getDatabase } from "../storage/db.js";
 import type { KontexConfig } from "../config.js";
-import type { MemoryEntry, MemoryType, WriteResult, DedupResult, ADRInput } from "../types.js";
+import type { MemoryType, WriteResult, DedupResult, ADRInput } from "../types.js";
 
 // ─── Public API ────────────────────────────────────────────────────────────
 
@@ -100,7 +100,7 @@ export async function invalidateMemory(uri: string, reason: string, workspaceRoo
   return { success: true, uri };
 }
 
-export async function logDecision(adr: ADRInput, workspaceRoot: string, config: KontexConfig): Promise<WriteResult> {
+export async function logDecision(adr: ADRInput, workspaceRoot: string, _config: KontexConfig): Promise<WriteResult> {
   const decisionsDir = join(workspaceRoot, ".context", "memory", "decisions");
   if (!existsSync(decisionsDir)) mkdirSync(decisionsDir, { recursive: true });
 

@@ -65,6 +65,7 @@ ${filesContext}`;
         const type = ["decision", "pattern", "gotcha", "convention"].includes(m.type) ? m.type : "convention";
         const r = await writeMemory({
           content: m.content,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           type: type as any,
           why_memorable: m.why_memorable || "Extracted from codebase initialization",
           confidence: Math.min(m.confidence || 0.8, 0.84),

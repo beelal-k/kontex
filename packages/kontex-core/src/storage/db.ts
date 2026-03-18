@@ -6,7 +6,7 @@
  */
 
 import { Database } from "bun:sqlite";
-import { join, dirname } from "node:path";
+import { join } from "node:path";
 import { existsSync, mkdirSync } from "node:fs";
 
 const INDEX_DIR = ".kontex-index";
@@ -95,7 +95,8 @@ function tryLoadVecExtension(db: Database): void {
   try {
     const extPath = sqliteVec.getLoadablePath();
     db.loadExtension(extPath);
-  } catch (err: any) {
-    console.warn(`kontex: sqlite-vec extension not available (${err?.message || "unknown error"}). Semantic search will use keyword matching.`);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "unknown error";
+    console.warn(`kontex: sqlite-vec extension not available (${message}). Semantic search will use keyword matching.`);
   }
 }

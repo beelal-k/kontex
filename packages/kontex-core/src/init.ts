@@ -190,7 +190,7 @@ function injectAgentInstructions(root: string): void {
 
 function updateGitignore(root: string): void {
   const gitignorePath = join(root, ".gitignore");
-  let content = existsSync(gitignorePath) ? readFileSync(gitignorePath, "utf-8") : "";
+  const content = existsSync(gitignorePath) ? readFileSync(gitignorePath, "utf-8") : "";
   const missing = [".kontex-index/", ".kontex-log/", ".kontex-queue.json"].filter((e) => !content.includes(e));
   if (missing.length > 0) {
     appendFileSync(gitignorePath, "\n# kontex (local)\n" + missing.join("\n") + "\n", "utf-8");
