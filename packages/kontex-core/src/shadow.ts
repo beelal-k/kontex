@@ -30,7 +30,7 @@ export async function processShadowComments(workspaceRoot: string): Promise<void
 
         await writeMemory(entry, workspaceRoot, config);
       }
-    } catch (_e) {
+    } catch {
       console.error(`Invalid shadow comment JSON skipped: ${line}`);
     }
   }

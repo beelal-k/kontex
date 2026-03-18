@@ -1,6 +1,7 @@
 {
   "name": "kontex",
   "private": true,
+  "type": "module",
   "packageManager": "bun@1.1.27",
   "workspaces": [
     "packages/*"

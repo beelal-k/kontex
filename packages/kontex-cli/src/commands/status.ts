@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 import { loadConfig, loadAllEntries, isAuthenticated } from "kontex-core";
-import { existsSync, statSync, readdirSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 export function registerStatusCommand(program: Command): void {

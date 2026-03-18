@@ -18,14 +18,23 @@ mock.module("../src/storage/embeddings.js", () => ({
 }));
 
 beforeEach(() => {
-  mkdirSync(join(TEST_DIR, ".context", "memory", "decisions"), { recursive: true });
-  mkdirSync(join(TEST_DIR, ".context", "memory", "sessions"), { recursive: true });
+  // Clean up any leftover state from a previous run
+  closeDatabase();
+  if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true });
+
+  // Create all memory subdirectories the write pipeline may use
+  for (const sub of ["conventions", "decisions", "gotchas", "patterns", "sessions"]) {
+    mkdirSync(join(TEST_DIR, ".context", "memory", sub), { recursive: true });
+  }
+  mkdirSync(join(TEST_DIR, ".kontex-index"), { recursive: true });
+  mkdirSync(join(TEST_DIR, ".kontex-log"), { recursive: true });
+
   getDatabase(TEST_DIR); // init DB
 });
 
 afterEach(() => {
   closeDatabase();
-  if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true });
+  if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true });
 });
 
 describe("Shadow Parser (Copilot Fallback)", () => {
@@ -40,7 +49,7 @@ describe("Shadow Parser (Copilot Fallback)", () => {
         affected_paths: ["src/db/"]
       }
     });
-    
+
     // An invalid line to ensure it doesn't crash the parser
     const invalidLine = "not json";
     const validLine2 = JSON.stringify({
@@ -75,7 +84,7 @@ describe("Shadow Parser (Copilot Fallback)", () => {
 
   test("does nothing if shadow.jsonl is missing or empty", async () => {
     const shadowPath = join(TEST_DIR, ".context", "shadow.jsonl");
-    
+
     // Missing
     await processShadowComments(TEST_DIR);
     expect(loadAllEntries(TEST_DIR).length).toBe(0);
