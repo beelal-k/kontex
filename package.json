@@ -1,0 +1,18 @@
+{
+  "name": "kontex",
+  "private": true,
+  "packageManager": "bun@1.1.27",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "prepare": "kontex hooks install || true"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.0",
+    "@changesets/cli": "^2.27.0",
+    "typescript": "^5.7.0"
+  }
+}

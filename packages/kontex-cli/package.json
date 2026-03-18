@@ -1,0 +1,30 @@
+{
+  "name": "kontex-cli",
+  "version": "1.0.0",
+  "description": "CLI for kontex — thin commander wrapper over kontex-core",
+  "type": "module",
+  "bin": {
+    "kontex": "dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun --packages external",
+    "test": "bun test",
+    "dev": "bun --watch src/index.ts",
+    "prepare": "kontex hooks install"
+  },
+  "dependencies": {
+    "kontex-core": "workspace:*",
+    "commander": "^13.1.0",
+    "chalk": "^5.4.0"
+  },
+  "devDependencies": {
+    "bun-types": "^1.1.0",
+    "typescript": "^5.7.0"
+  }
+}
