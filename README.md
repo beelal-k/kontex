@@ -102,6 +102,7 @@ kontex runs entirely locally. Embeddings are generated entirely on your machine 
 
 No code is ever uploaded to a centralized server by kontex itself.
 
+
 ## License
 
 MIT
