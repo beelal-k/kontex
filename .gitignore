@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Turborepo
+.turbo/
+
+# kontex local index (contains embeddings — never commit)
+.kontex-index/
+
+# kontex logs
+.kontex-log/
+
+# kontex queue (transient)
+.kontex-queue.json
+
+# Bun
+*.lockb
+bun.lockb
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Changesets temp
+.changeset/*.md
+!.changeset/config.json
