@@ -177,9 +177,11 @@ async function indexMemoryEntry(
   } catch { /* skip vector index */ }
 }
 
+let uriCounter = 0;
 function generateUri(type: MemoryType, content: string): string {
   const slug = slugify(content.split("\n")[0]?.slice(0, 60) ?? "entry");
-  return `memory/${type}s/${slug}-${Date.now().toString(36)}`;
+  const uniqueSuffix = `${Date.now().toString(36)}-${(uriCounter++).toString(36)}`;
+  return `memory/${type}s/${slug}-${uniqueSuffix}`;
 }
 
 function slugify(text: string): string {
