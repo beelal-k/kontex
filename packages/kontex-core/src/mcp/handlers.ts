@@ -2,6 +2,9 @@
  * MCP tool call handlers — wired to the memory engine.
  */
 
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import matter from "gray-matter";
 import { writeMemory, invalidateMemory, logDecision } from "../memory/write.js";
 import { findMemories } from "../memory/read.js";
 import { compile } from "../memory/compile.js";
@@ -65,12 +68,28 @@ export async function handleFind(args: Record<string, unknown>, workspaceRoot: s
 
   const { getDatabase } = await import("../storage/db.js");
   const db = getDatabase(workspaceRoot);
-  for (const r of results) db.prepare("UPDATE memories SET ref_count = ref_count + 1 WHERE uri = ?").run(r.uri);
+  for (const r of results) {
+    db.prepare("UPDATE memories SET ref_count = ref_count + 1 WHERE uri = ?").run(r.uri);
+    syncRefCountToFile(r.uri, workspaceRoot, db);
+  }
 
   const formatted = results.map((r, i) =>
     `${i + 1}. **${r.uri}** (${r.type}, similarity: ${r.similarity.toFixed(2)}, verified: ${r.verified})\n   ${r.content.slice(0, 300)}`
   ).join("\n\n");
   return textResponse(formatted);
+}
+
+function syncRefCountToFile(uri: string, workspaceRoot: string, db: import("bun:sqlite").Database): void {
+  try {
+    const filePath = join(workspaceRoot, ".context", `${uri}.md`);
+    if (!existsSync(filePath)) return;
+    const row = db.prepare("SELECT ref_count FROM memories WHERE uri = ?").get(uri) as { ref_count: number } | null;
+    if (!row) return;
+    const raw = readFileSync(filePath, "utf-8");
+    const parsed = matter(raw);
+    parsed.data.ref_count = row.ref_count;
+    writeFileSync(filePath, matter.stringify(parsed.content, parsed.data), "utf-8");
+  } catch { /* non-critical — DB is the primary source, file will sync on next decay cycle */ }
 }
 
 function textResponse(text: string): MCPToolResponse { return { content: [{ type: "text", text }] }; }

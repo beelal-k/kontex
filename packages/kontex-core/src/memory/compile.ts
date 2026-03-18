@@ -9,6 +9,21 @@ import { join } from "node:path";
 import { loadAllEntries } from "./read.js";
 import type { KontexConfig } from "../config.js";
 import type { MemoryEntry } from "../types.js";
+import { encoding_for_model } from "tiktoken";
+
+let cachedEncoder: ReturnType<typeof encoding_for_model> | null = null;
+
+function getEncoder(): ReturnType<typeof encoding_for_model> {
+  if (!cachedEncoder) {
+    try {
+      cachedEncoder = encoding_for_model("gpt-4o-mini");
+    } catch {
+      // Fallback: if tiktoken fails to load, return a mock encoder
+      return { encode: (text: string) => new Uint32Array(Math.ceil(text.length / 4)) } as any;
+    }
+  }
+  return cachedEncoder;
+}
 
 export async function compile(workspaceRoot: string, config: KontexConfig): Promise<void> {
   const allEntries = loadAllEntries(workspaceRoot);
@@ -105,4 +120,11 @@ async function getRecentlyModifiedFiles(workspaceRoot: string, days: number): Pr
   } catch { return []; }
 }
 
-function estimateTokens(text: string): number { return Math.ceil(text.length / 4); }
+function estimateTokens(text: string): number {
+  try {
+    return getEncoder().encode(text).length;
+  } catch {
+    // Graceful fallback to character-based estimation
+    return Math.ceil(text.length / 4);
+  }
+}

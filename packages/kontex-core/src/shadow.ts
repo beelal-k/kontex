@@ -1,14 +1,14 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { writeMemory } from './memory/write.js';
 import { loadConfig } from './config.js';
 import type { MemoryType } from './types.js';
 
 export async function processShadowComments(workspaceRoot: string): Promise<void> {
-  const shadowPath = path.join(workspaceRoot, '.context', 'shadow.jsonl');
-  if (!fs.existsSync(shadowPath)) return;
+  const shadowPath = join(workspaceRoot, '.context', 'shadow.jsonl');
+  if (!existsSync(shadowPath)) return;
 
-  const content = fs.readFileSync(shadowPath, 'utf8');
+  const content = readFileSync(shadowPath, 'utf8');
   if (!content.trim()) return;
 
   const lines = content.split('\n').filter(line => line.trim() !== '');
@@ -19,7 +19,7 @@ export async function processShadowComments(workspaceRoot: string): Promise<void
       const parsed = JSON.parse(line);
       if (parsed.__kontex_memory) {
         const mem = parsed.__kontex_memory;
-        
+
         const entry = {
           type: (mem.type as MemoryType) || 'decision',
           content: mem.content,
@@ -27,7 +27,7 @@ export async function processShadowComments(workspaceRoot: string): Promise<void
           affected_paths: Array.isArray(mem.affected_paths) ? mem.affected_paths : [],
           why_memorable: mem.why_memorable || 'Recorded via Copilot shadow comment'
         };
-        
+
         await writeMemory(entry, workspaceRoot, config);
       }
     } catch (e) {
@@ -36,5 +36,5 @@ export async function processShadowComments(workspaceRoot: string): Promise<void
   }
 
   // Clear the file after processing
-  fs.writeFileSync(shadowPath, '');
+  writeFileSync(shadowPath, '');
 }

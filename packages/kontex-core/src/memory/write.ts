@@ -78,7 +78,7 @@ export async function writeMemory(
   if (!existsSync(fileDir)) mkdirSync(fileDir, { recursive: true });
   writeFileSync(filePath, fileContent, "utf-8");
 
-  await indexMemoryEntry(uri, entry.content, entry.type, verified, entry.confidence, entry.affected_paths ?? [], db);
+  await indexMemoryEntry(uri, entry.content, entry.type, verified, entry.confidence, entry.affected_paths ?? [], db, l0, l1, "");
   logQualityEvent(logPath, "WRITTEN", `${uri} (verified: ${verified})`);
   return { success: true, uri, verified };
 }
@@ -131,7 +131,8 @@ export async function logDecision(adr: ADRInput, workspaceRoot: string, config: 
   writeFileSync(filePath, fileContent, "utf-8");
 
   const db = getDatabase(workspaceRoot);
-  await indexMemoryEntry(uri, `${adr.title} ${adr.decision} ${adr.context}`, "decision", true, 0.95, adr.affected_paths ?? [], db);
+  const adrContent = `${adr.title} ${adr.decision} ${adr.context}`;
+  await indexMemoryEntry(uri, adrContent, "decision", true, 0.95, adr.affected_paths ?? [], db, l0, body, "");
   return { success: true, uri, verified: true };
 }
 
@@ -155,8 +156,21 @@ async function dedupCheck(content: string, db: import("bun:sqlite").Database, co
   } catch { return { status: "clear" }; }
 }
 
-async function indexMemoryEntry(uri: string, content: string, type: MemoryType, verified: boolean, confidence: number, affectedPaths: string[], db: import("bun:sqlite").Database): Promise<void> {
-  db.prepare(`INSERT OR REPLACE INTO memories (uri, content, type, verified, confidence, affected_paths, updated_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`).run(uri, content, type, verified ? 1 : 0, confidence, JSON.stringify(affectedPaths));
+async function indexMemoryEntry(
+  uri: string,
+  content: string,
+  type: MemoryType,
+  verified: boolean,
+  confidence: number,
+  affectedPaths: string[],
+  db: import("bun:sqlite").Database,
+  l0: string = "",
+  l1: string = "",
+  l2: string = "",
+): Promise<void> {
+  db.prepare(
+    `INSERT OR REPLACE INTO memories (uri, content, type, l0, l1, l2, verified, confidence, affected_paths, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+  ).run(uri, content, type, l0, l1, l2, verified ? 1 : 0, confidence, JSON.stringify(affectedPaths));
   try {
     const embedding = await embed(content);
     db.prepare(`INSERT OR REPLACE INTO memory_embeddings (uri, embedding) VALUES (?, ?)`).run(uri, Buffer.from(embedding.buffer));

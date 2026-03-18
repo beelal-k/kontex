@@ -6,6 +6,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, chmodSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { homedir } from "node:os";
+
 import { isAuthenticated, login } from "./auth.js";
 import { writeConfig, DEFAULT_CONFIG, loadConfig } from "./config.js";
 import { compile } from "./memory/compile.js";
@@ -146,6 +147,7 @@ function registerInAITools(root: string): void {
     { name: "Claude Code", configPath: join(home, ".claude", "claude_desktop_config.json"), key: "mcpServers" },
     { name: "Cursor", configPath: join(root, ".cursor", "mcp.json"), key: "mcpServers" },
     { name: "Windsurf", configPath: join(home, ".codeium", "windsurf", "mcp_config.json"), key: "mcpServers" },
+    { name: "Zed", configPath: join(home, ".config", "zed", "settings.json"), key: "mcpServers" },
   ];
   for (const tool of tools) {
     try {

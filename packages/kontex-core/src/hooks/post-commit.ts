@@ -57,19 +57,13 @@ export async function handlePostCommit(commitSha: string, authorEmail: string, w
 
 async function extractKnowledge(diff: string, existingL0: string, config: KontexConfig, token: string | null): Promise<ExtractionResult | null> {
   try {
+    const { createLLMModel } = await import("../llm.js");
     const { generateText } = await import("ai");
-    const { createOpenAI } = await import("@ai-sdk/openai");
     const truncatedDiff = diff.slice(0, 24000);
     const prompt = `You are analyzing a git commit to extract knowledge for a persistent project memory store.\n\nCommit diff:\n${truncatedDiff}\n\nExisting memory context (L0):\n${existingL0}\n\nExtract learnings. Return JSON only:\n{"new_memories":[{"content":"...","type":"decision|pattern|gotcha|convention","why_memorable":"...","confidence":0.0-1.0,"affected_paths":["..."]}],"stale_uris":["..."]}\n\nIf nothing worth persisting, return: {"new_memories":[],"stale_uris":[]}\nBe conservative.`;
 
-    let model;
-    if (config.llm.provider === "github-models") {
-      model = createOpenAI({ baseURL: "https://models.inference.ai.azure.com", apiKey: token ?? "" })(config.llm.model);
-    } else if (config.llm.provider === "openai") {
-      model = createOpenAI({ apiKey: config.llm.apiKey ?? process.env.OPENAI_API_KEY ?? "" })(config.llm.model);
-    } else if (config.llm.provider === "ollama") {
-      model = createOpenAI({ baseURL: "http://localhost:11434/v1", apiKey: "ollama" })(config.llm.model);
-    } else { return null; }
+    const model = await createLLMModel(config, token);
+    if (!model) return null;
 
     const result = await generateText({ model, prompt, maxTokens: 1000, temperature: 0.1 });
     const jsonMatch = result.text.match(/\{[\s\S]*\}/);
@@ -83,9 +77,16 @@ async function writeSessionFile(commitSha: string, authorEmail: string, extracti
   const date = new Date().toISOString().slice(0, 10);
   const authorHash = createHash("md5").update(authorEmail).digest("hex").slice(0, 8);
   const filePath = join(sessionsDir, `${date}-${authorHash}.md`);
-  const content = `---\ncommit: ${commitSha}\nauthor: ${authorEmail}\ndate: ${new Date().toISOString()}\n---\n\n## Session: ${date}\n\n### Commit ${commitSha.slice(0, 7)}\n\n${extraction.new_memories.map((m) => `- **${m.type}** (${m.confidence.toFixed(2)}): ${m.content}`).join("\n") || "No new memories."}\n`;
-  if (existsSync(filePath)) appendFileSync(filePath, `\n${content}`, "utf-8");
-  else writeFileSync(filePath, content, "utf-8");
+
+  const commitBody = `\n### Commit ${commitSha.slice(0, 7)}\n\n${extraction.new_memories.map((m) => `- **${m.type}** (${m.confidence.toFixed(2)}): ${m.content}`).join("\n") || "No new memories."}\n`;
+
+  if (existsSync(filePath)) {
+    // Append only the commit body — no duplicate frontmatter
+    appendFileSync(filePath, commitBody, "utf-8");
+  } else {
+    const header = `---\nauthor: ${authorEmail}\ndate: ${date}\nuri: memory/sessions/${date}-${authorHash}\ntype: resource\nconfidence: 0.7\nverified: false\nstale: false\nglobal: false\naffected_paths: []\nref_count: 0\ntags: ["session"]\n---\n\n## Session: ${date}\n`;
+    writeFileSync(filePath, header + commitBody, "utf-8");
+  }
 }
 
 async function getCommitDiff(sha: string, workspaceRoot: string): Promise<string> {

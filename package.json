@@ -2,17 +2,25 @@
   "name": "kontex",
   "private": true,
   "packageManager": "bun@1.1.27",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",
+    "test:core": "bun test --cwd packages/kontex-core",
+    "test:cli": "bun test --cwd packages/kontex-cli",
+    "test:all": "bun test --cwd packages/kontex-core && bun test --cwd packages/kontex-cli",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "prepare": "kontex hooks install || true"
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.0",
     "turbo": "^2.4.0",
     "@changesets/cli": "^2.27.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "eslint": "^9.0.0",
+    "typescript-eslint": "^8.0.0"
   }
 }

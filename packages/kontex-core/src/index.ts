@@ -19,3 +19,4 @@ export { handlePreCommit } from "./hooks/pre-commit.js";
 export { handlePostCommit } from "./hooks/post-commit.js";
 export { handlePostMerge } from "./hooks/post-merge.js";
 export { initProject } from "./init.js";
+export { HOOK_TEMPLATES } from "./hook-templates.js";
