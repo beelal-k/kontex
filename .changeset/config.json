@@ -1,9 +1,9 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
-  "changelog": "@changesets/cli/changelog",
+  "changelog": ["@changesets/changelog-github", { "repo": "ArekBee/kontex" }],
   "commit": false,
   "fixed": [],
-  "linked": [],
+  "linked": [["kontex-core", "kontex-cli"]],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",

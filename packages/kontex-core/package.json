@@ -3,6 +3,34 @@
   "version": "1.0.0",
   "description": "Core engine for kontex — quality gate, MCP server, compilation, embedding, storage, hooks, auth",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ArekBee/kontex.git",
+    "directory": "packages/kontex-core"
+  },
+  "homepage": "https://github.com/ArekBee/kontex#readme",
+  "bugs": {
+    "url": "https://github.com/ArekBee/kontex/issues"
+  },
+  "keywords": [
+    "kontex",
+    "mcp",
+    "ai",
+    "memory",
+    "context",
+    "llm",
+    "model-context-protocol",
+    "coding-assistant"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
