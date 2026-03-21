@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, spyOn } from "bun:test";
 import { loadConfig, writeConfig, DEFAULT_CONFIG } from "../src/config";
 import { mkdirSync, rmSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
@@ -24,6 +24,19 @@ describe("loadConfig", () => {
   test("handles invalid JSON gracefully", () => {
     writeFileSync(join(TEST_DIR, "kontex.config.json"), "not json");
     expect(loadConfig(TEST_DIR)).toEqual(DEFAULT_CONFIG);
+  });
+
+  test("warns when config file has invalid JSON", () => {
+    writeFileSync(join(TEST_DIR, "kontex.config.json"), "{ invalid json }", "utf-8");
+    const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const config = loadConfig(TEST_DIR);
+      expect(config).toEqual(DEFAULT_CONFIG);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain("kontex.config.json");
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 
   test("resolves environment variables in apiKey", () => {

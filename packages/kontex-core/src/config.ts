@@ -167,7 +167,10 @@ export function loadConfig(workspaceRoot: string): KontexConfig {
     }
 
     return merged;
-  } catch {
+  } catch (err) {
+    console.warn(
+      `kontex: Failed to parse ${configPath} — using defaults. Fix the JSON syntax to apply your settings.\n  Error: ${err instanceof Error ? err.message : String(err)}`
+    );
     return { ...DEFAULT_CONFIG };
   }
 }
