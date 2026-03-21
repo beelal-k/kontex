@@ -54,11 +54,11 @@ export async function initProject(workspaceRoot: string, options: { ai?: boolean
   await compile(absRoot, loadConfig(absRoot));
   console.log("✓ KONTEX.md compiled");
 
-  // 9. AI tool registration
+  // 10. AI tool registration
   registerInAITools(absRoot);
   injectAgentInstructions(absRoot);
 
-  // 10. Gitignore
+  // 11. Gitignore
   updateGitignore(absRoot);
 
   console.log("\n✓ kontex initialized. Memory is active.\n");
@@ -144,7 +144,7 @@ function registerInAITools(root: string): void {
   const home = homedir();
   const entry = { command: "bunx", args: ["kontex", "mcp"], env: { KONTEX_WORKSPACE: root } };
   const tools = [
-    { name: "Claude Code", configPath: join(home, ".claude", "claude_desktop_config.json"), key: "mcpServers" },
+    { name: "Claude Code", configPath: join(home, ".claude.json"), key: "mcpServers" },
     { name: "Cursor", configPath: join(root, ".cursor", "mcp.json"), key: "mcpServers" },
     { name: "Windsurf", configPath: join(home, ".codeium", "windsurf", "mcp_config.json"), key: "mcpServers" },
     { name: "Zed", configPath: join(home, ".config", "zed", "settings.json"), key: "mcpServers" },
