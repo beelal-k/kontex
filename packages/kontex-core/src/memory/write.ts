@@ -157,7 +157,10 @@ async function dedupCheck(content: string, db: import("bun:sqlite").Database, co
     if (similarity > config.quality.deduplicateThreshold) return { status: "duplicate", existing_uri: top.uri };
     if (similarity > config.quality.contradictionThreshold) return { status: "conflict", existing_uri: top.uri, existing_content: top.content, message: `Similar memory exists at ${top.uri}. If this supersedes it, call kontex_invalidate first.` };
     return { status: "clear" };
-  } catch { return { status: "clear" }; }
+  } catch (err) {
+    console.warn(`kontex: dedup check failed (embedding or DB error) — skipping duplicate detection.\n  Error: ${err instanceof Error ? err.message : String(err)}`);
+    return { status: "clear" };
+  }
 }
 
 async function indexMemoryEntry(
@@ -178,7 +181,9 @@ async function indexMemoryEntry(
   try {
     const embedding = await embed(content);
     db.prepare(`INSERT OR REPLACE INTO memory_embeddings (uri, embedding) VALUES (?, ?)`).run(uri, Buffer.from(embedding.buffer));
-  } catch { /* skip vector index */ }
+  } catch (err) {
+    console.warn(`kontex: failed to index embedding for ${uri} — semantic search will not find this entry.\n  Error: ${err instanceof Error ? err.message : String(err)}`);
+  }
 }
 
 let uriCounter = 0;
