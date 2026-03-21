@@ -78,12 +78,12 @@ async function fetchGitHubUsername(token: string): Promise<string> {
 }
 
 async function openBrowser(url: string): Promise<void> {
-  const { exec } = await import("node:child_process");
-  const command =
-    process.platform === "darwin" ? `open "${url}"` :
-    process.platform === "win32" ? `start "${url}"` :
-    `xdg-open "${url}"`;
+  const { execFile } = await import("node:child_process");
+  const [cmd, ...args]: string[] =
+    process.platform === "darwin" ? ["open", url] :
+    process.platform === "win32" ? ["cmd", "/c", "start", "", url] :
+    ["xdg-open", url];
   return new Promise((resolve, reject) => {
-    exec(command, (error) => { if (error) reject(error); else resolve(); });
+    execFile(cmd, args, (error) => { if (error) reject(error); else resolve(); });
   });
 }
