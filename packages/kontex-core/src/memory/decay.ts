@@ -65,8 +65,12 @@ async function archiveSessions(memoryDir: string, archiveDays: number, result: D
     const filePath = join(sessionsDir, file.name);
     try {
       if (statSync(filePath).mtime < cutoff) {
-        writeFileSync(join(archiveDir, file.name), readFileSync(filePath, "utf-8"), "utf-8");
-        writeFileSync(filePath, `---\narchived: true\narchived_at: ${new Date().toISOString()}\n---\nArchived to archive/${file.name}\n`, "utf-8");
+        const archiveDest = join(archiveDir, file.name);
+        const finalDest = existsSync(archiveDest)
+          ? join(archiveDir, file.name.replace(".md", `-${Date.now()}.md`))
+          : archiveDest;
+        writeFileSync(finalDest, readFileSync(filePath, "utf-8"), "utf-8");
+        writeFileSync(filePath, `---\narchived: true\narchived_at: ${new Date().toISOString()}\n---\nArchived to archive/${basename(finalDest)}\n`, "utf-8");
         result.archived.push(file.name);
       }
     } catch { /* skip */ }
@@ -106,7 +110,11 @@ async function enforceSessionsSizeCap(memoryDir: string, maxSizeKB: number, resu
   for (const file of files) {
     if (totalKB <= maxSizeKB) break;
     totalKB -= statSync(file.path).size / 1024;
-    writeFileSync(join(archiveDir, file.name), readFileSync(file.path, "utf-8"), "utf-8");
+    const archiveDest = join(archiveDir, file.name);
+    const finalDest = existsSync(archiveDest)
+      ? join(archiveDir, file.name.replace(".md", `-${Date.now()}.md`))
+      : archiveDest;
+    writeFileSync(finalDest, readFileSync(file.path, "utf-8"), "utf-8");
     writeFileSync(file.path, `---\narchived: true\n---\nCompressed due to size cap.\n`, "utf-8");
     result.archived.push(file.name);
   }
