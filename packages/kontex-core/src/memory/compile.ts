@@ -11,56 +11,57 @@ import type { KontexConfig } from "../config.js";
 import type { MemoryEntry } from "../types.js";
 import { encoding_for_model } from "tiktoken";
 
-let cachedEncoder: ReturnType<typeof encoding_for_model> | null = null;
-
-function getEncoder(): ReturnType<typeof encoding_for_model> {
-  if (!cachedEncoder) {
-    try {
-      cachedEncoder = encoding_for_model("gpt-4o-mini");
-    } catch {
-      // Fallback: if tiktoken fails to load, return a mock encoder
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return { encode: (text: string) => new Uint32Array(Math.ceil(text.length / 4)) } as any;
-    }
+// Note: encoder is created per compile() call and freed afterwards to prevent WASM heap growth.
+// Do not cache long-term — tiktoken WASM objects must be explicitly freed.
+function createEncoder(): ReturnType<typeof encoding_for_model> | null {
+  try {
+    return encoding_for_model("gpt-4o-mini");
+  } catch {
+    return null;
   }
-  return cachedEncoder;
 }
 
 export async function compile(workspaceRoot: string, config: KontexConfig): Promise<void> {
-  const allEntries = loadAllEntries(workspaceRoot);
-  const recentFiles = await getRecentlyModifiedFiles(workspaceRoot, 7);
+  const encoder = createEncoder();
+  try {
+    const allEntries = loadAllEntries(workspaceRoot);
+    const recentFiles = await getRecentlyModifiedFiles(workspaceRoot, 7);
 
-  let tokenCount = 0;
-  const sections: string[] = [];
+    let tokenCount = 0;
+    const sections: string[] = [];
 
-  const systemPrompt = buildSystemPrompt();
-  sections.push(systemPrompt);
-  tokenCount += estimateTokens(systemPrompt);
+    const systemPrompt = buildSystemPrompt();
+    sections.push(systemPrompt);
+    tokenCount += estimateTokens(systemPrompt, encoder);
 
-  const verifiedEntries = allEntries.filter((e) => e.verified && !e.stale);
-  const l0Section = buildL0Index(verifiedEntries);
-  sections.push(l0Section);
-  tokenCount += estimateTokens(l0Section);
+    const verifiedEntries = allEntries.filter((e) => e.verified && !e.stale);
+    const l0Section = buildL0Index(verifiedEntries);
+    sections.push(l0Section);
+    tokenCount += estimateTokens(l0Section, encoder);
 
-  const relevant = verifiedEntries
-    .filter((e) => e.global || isRecentlyTouched(e, recentFiles) || isRecentlyCreated(e, 7))
-    .sort((a, b) => b.ref_count - a.ref_count);
+    const relevant = verifiedEntries
+      .filter((e) => e.global || isRecentlyTouched(e, recentFiles) || isRecentlyCreated(e, 7))
+      .sort((a, b) => b.ref_count - a.ref_count);
 
-  const includedUris = new Set<string>();
-  for (const entry of relevant) {
-    const l1Content = formatL1Section(entry);
-    const tokens = estimateTokens(l1Content);
-    if (tokenCount + tokens > config.compile.tokenBudget) break;
-    sections.push(l1Content);
-    tokenCount += tokens;
-    includedUris.add(entry.uri);
+    const includedUris = new Set<string>();
+    for (const entry of relevant) {
+      const l1Content = formatL1Section(entry);
+      const tokens = estimateTokens(l1Content, encoder);
+      if (tokenCount + tokens > config.compile.tokenBudget) break;
+      sections.push(l1Content);
+      tokenCount += tokens;
+      includedUris.add(entry.uri);
+    }
+
+    const l2Available = allEntries.filter((e) => !e.stale && !includedUris.has(e.uri));
+    if (l2Available.length > 0) sections.push(buildL2Footer(l2Available));
+
+    const output = sections.join("\n\n---\n\n");
+    writeFileSync(join(workspaceRoot, ".context", "KONTEX.md"), output, "utf-8");
+  } finally {
+    // Always free the WASM encoder to prevent heap growth in long-running MCP server processes
+    try { encoder?.free(); } catch { /* ignore */ }
   }
-
-  const l2Available = allEntries.filter((e) => !e.stale && !includedUris.has(e.uri));
-  if (l2Available.length > 0) sections.push(buildL2Footer(l2Available));
-
-  const output = sections.join("\n\n---\n\n");
-  writeFileSync(join(workspaceRoot, ".context", "KONTEX.md"), output, "utf-8");
 }
 
 function buildSystemPrompt(): string {
@@ -121,11 +122,9 @@ async function getRecentlyModifiedFiles(workspaceRoot: string, days: number): Pr
   } catch { return []; }
 }
 
-function estimateTokens(text: string): number {
+function estimateTokens(text: string, encoder: ReturnType<typeof encoding_for_model> | null): number {
   try {
-    return getEncoder().encode(text).length;
-  } catch {
-    // Graceful fallback to character-based estimation
-    return Math.ceil(text.length / 4);
-  }
+    if (encoder) return encoder.encode(text).length;
+  } catch { /* fall through */ }
+  return Math.ceil(text.length / 4);
 }
