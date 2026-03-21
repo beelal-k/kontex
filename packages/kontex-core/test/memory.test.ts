@@ -138,3 +138,21 @@ describe("Memory Read Pipeline", () => {
     expect(entries.some(e => e.type === "pattern")).toBe(true);
   });
 });
+
+describe("Database isolation", () => {
+  test("getDatabase returns different instances for different workspaceRoots", () => {
+    const DIR_A = join(import.meta.dir, "fixtures", "db-test-a");
+    const DIR_B = join(import.meta.dir, "fixtures", "db-test-b");
+    mkdirSync(join(DIR_A, ".kontex-index"), { recursive: true });
+    mkdirSync(join(DIR_B, ".kontex-index"), { recursive: true });
+    try {
+      const dbA = getDatabase(DIR_A);
+      const dbB = getDatabase(DIR_B);
+      expect(dbA).not.toBe(dbB);
+    } finally {
+      closeDatabase();
+      rmSync(DIR_A, { recursive: true, force: true });
+      rmSync(DIR_B, { recursive: true, force: true });
+    }
+  });
+});
