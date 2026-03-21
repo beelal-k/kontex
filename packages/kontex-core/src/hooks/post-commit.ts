@@ -7,7 +7,7 @@ import { join, dirname } from "node:path";
 import { createHash } from "node:crypto";
 import { loadConfig } from "../config.js";
 import { getToken } from "../auth.js";
-import { writeMemory } from "../memory/write.js";
+import { writeMemory, invalidateMemory } from "../memory/write.js";
 import { compile } from "../memory/compile.js";
 import { loadAllEntries } from "../memory/read.js";
 import type { KontexConfig } from "../config.js";
@@ -41,9 +41,8 @@ export async function handlePostCommit(commitSha: string, authorEmail: string, w
         await writeMemory({ content: m.content, type: m.type, why_memorable: m.why_memorable, confidence: m.confidence, affected_paths: m.affected_paths }, workspaceRoot, config);
       }
       await writeSessionFile(commitSha, authorEmail, extraction, workspaceRoot);
-      if (extraction.stale_uris.length > 0) {
-        const { invalidateMemory } = await import("../memory/write.js");
-        for (const uri of extraction.stale_uris) await invalidateMemory(uri, `Flagged stale by commit ${commitSha.slice(0, 7)}`, workspaceRoot);
+      for (const uri of extraction.stale_uris) {
+        await invalidateMemory(uri, `Flagged stale by commit ${commitSha.slice(0, 7)}`, workspaceRoot);
       }
     }
     await compileAndCommit(workspaceRoot, config);
