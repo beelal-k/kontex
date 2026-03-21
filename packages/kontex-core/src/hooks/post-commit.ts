@@ -94,13 +94,27 @@ async function getCommitDiff(sha: string, workspaceRoot: string): Promise<string
   catch { return ""; }
 }
 
+function isGitOperationInProgress(workspaceRoot: string): boolean {
+  const gitDir = join(workspaceRoot, ".git");
+  // These files exist only during active history-rewriting git operations
+  return ["REBASE_HEAD", "MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "BISECT_LOG"]
+    .some((f) => existsSync(join(gitDir, f)));
+}
+
 async function compileAndCommit(workspaceRoot: string, config: KontexConfig): Promise<void> {
   if (!existsSync(join(workspaceRoot, ".context"))) return;
   await compile(workspaceRoot, config);
   try {
     Bun.spawnSync(["git", "add", ".context/"], { cwd: workspaceRoot });
     const status = Bun.spawnSync(["git", "diff", "--cached", "--quiet", ".context/"], { cwd: workspaceRoot });
-    if (status.exitCode !== 0) Bun.spawnSync(["git", "commit", "--no-verify", "-m", "chore(kontex): update memory [skip ci]"], { cwd: workspaceRoot });
+    if (status.exitCode !== 0) {
+      if (isGitOperationInProgress(workspaceRoot)) {
+        // During rebase/amend/cherry-pick: files are staged but don't create a separate commit.
+        // The in-progress git operation will include the updated .context/ files.
+        return;
+      }
+      Bun.spawnSync(["git", "commit", "--no-verify", "-m", "chore(kontex): update memory [skip ci]"], { cwd: workspaceRoot });
+    }
   } catch { /* non-critical */ }
 }
 
