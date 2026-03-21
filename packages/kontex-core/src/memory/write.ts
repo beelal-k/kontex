@@ -106,7 +106,11 @@ export async function logDecision(adr: ADRInput, workspaceRoot: string, _config:
 
   const { readdirSync } = await import("node:fs");
   const existing = readdirSync(decisionsDir).filter((f) => f.endsWith(".md"));
-  const nextNum = String(existing.length + 1).padStart(3, "0");
+  const highestNum = existing.reduce((max, filename) => {
+    const match = filename.match(/^(\d+)-/);
+    return match ? Math.max(max, parseInt(match[1], 10)) : max;
+  }, 0);
+  const nextNum = String(highestNum + 1).padStart(3, "0");
   const slug = slugify(adr.title);
   const uri = `memory/decisions/${nextNum}-${slug}`;
   const now = new Date().toISOString();

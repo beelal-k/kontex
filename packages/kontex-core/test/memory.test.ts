@@ -106,6 +106,21 @@ describe("Memory Invalidation and ADRs", () => {
     expect(entry?.stale).toBe(true);
   });
 
+  test("ADR numbering uses highest existing number, not count", async () => {
+    const r1 = await logDecision({ title: "Decision Alpha", context: "ctx", decision: "dec", rationale: "rat" }, TEST_DIR, DEFAULT_CONFIG);
+    const r2 = await logDecision({ title: "Decision Beta", context: "ctx", decision: "dec", rationale: "rat" }, TEST_DIR, DEFAULT_CONFIG);
+    expect(r1.uri).toContain("001-");
+    expect(r2.uri).toContain("002-");
+
+    // Simulate a deleted file — count-based numbering would reuse 002
+    const { unlinkSync } = await import("node:fs");
+    unlinkSync(join(TEST_DIR, ".context", `${r1.uri}.md`));
+
+    const r3 = await logDecision({ title: "Decision Gamma", context: "ctx", decision: "dec", rationale: "rat" }, TEST_DIR, DEFAULT_CONFIG);
+    expect(r3.uri).toContain("003-");
+    expect(r3.uri).not.toBe(r2.uri);
+  });
+
   test("logs a structured ADR", async () => {
     const r = await logDecision({
       title: "Switch to Bun",
