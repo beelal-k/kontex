@@ -1,41 +1,16 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { processShadowComments } from "../src/shadow";
 import { loadAllEntries } from "../src/memory/read";
-import { getDatabase, closeDatabase } from "../src/storage/db";
-import { mkdirSync, rmSync, existsSync, writeFileSync, readFileSync } from "node:fs";
+import { existsSync, writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { mockEmbeddings, setupTestDir, teardownTestDir } from "./helpers";
 
 const TEST_DIR = join(import.meta.dir, "fixtures", "shadow-test");
 
-// Mock the embeddings module
-mock.module("../src/storage/embeddings.js", () => ({
-  initEmbeddingModel: async () => {},
-  embed: async (text: string) => {
-    const arr = new Float32Array(384);
-    arr.fill(Math.sin(text.length));
-    return arr;
-  },
-}));
+mockEmbeddings();
 
-beforeEach(() => {
-  // Clean up any leftover state from a previous run
-  closeDatabase();
-  if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true });
-
-  // Create all memory subdirectories the write pipeline may use
-  for (const sub of ["conventions", "decisions", "gotchas", "patterns", "sessions"]) {
-    mkdirSync(join(TEST_DIR, ".context", "memory", sub), { recursive: true });
-  }
-  mkdirSync(join(TEST_DIR, ".kontex-index"), { recursive: true });
-  mkdirSync(join(TEST_DIR, ".kontex-log"), { recursive: true });
-
-  getDatabase(TEST_DIR); // init DB
-});
-
-afterEach(() => {
-  closeDatabase();
-  if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true });
-});
+beforeEach(() => setupTestDir(TEST_DIR));
+afterEach(() => teardownTestDir(TEST_DIR));
 
 describe("Shadow Parser (Copilot Fallback)", () => {
   test("processes valid shadow comments and clears the file", async () => {

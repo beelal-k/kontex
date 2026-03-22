@@ -1,27 +1,15 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { handleRemember, handleInvalidate, handleLogDecision, handleFind } from "../src/mcp/handlers";
 import { DEFAULT_CONFIG } from "../src/config";
-import { getDatabase, closeDatabase } from "../src/storage/db";
-import { mkdirSync, rmSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { mockEmbeddings, setupTestDir, teardownTestDir } from "./helpers";
 
 const TEST_DIR = join(import.meta.dir, "fixtures", "mcp-test");
 
-mock.module("../src/storage/embeddings.js", () => ({
-  initEmbeddingModel: async () => {},
-  embed: async (t: string) => new Float32Array(384).fill(Math.sin(t.length)),
-}));
+mockEmbeddings();
 
-beforeEach(() => {
-  mkdirSync(join(TEST_DIR, ".context", "memory", "decisions"), { recursive: true });
-  mkdirSync(join(TEST_DIR, ".context", "memory", "sessions"), { recursive: true });
-  getDatabase(TEST_DIR);
-});
-
-afterEach(() => {
-  closeDatabase();
-  if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true });
-});
+beforeEach(() => setupTestDir(TEST_DIR));
+afterEach(() => teardownTestDir(TEST_DIR));
 
 describe("MCP Handlers", () => {
   test("handleRemember adds a memory and responds with success", async () => {

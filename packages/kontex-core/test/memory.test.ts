@@ -1,43 +1,18 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { writeMemory, invalidateMemory, logDecision } from "../src/memory/write";
-import { findMemories, loadAllEntries, loadEntry } from "../src/memory/read";
+import { loadAllEntries, loadEntry } from "../src/memory/read";
 import { DEFAULT_CONFIG } from "../src/config";
 import { getDatabase, closeDatabase } from "../src/storage/db";
-import { mkdirSync, rmSync, existsSync, readFileSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { mockEmbeddings, setupTestDir, teardownTestDir } from "./helpers";
 
 const TEST_DIR = join(import.meta.dir, "fixtures", "memory-test");
 
-// Mock the embeddings module to make tests lightning fast and avoid 23MB download every time
-mock.module("../src/storage/embeddings.js", () => ({
-  initEmbeddingModel: async () => {},
-  // Simple deterministic pseudo-embedding based on string length to simulate vector variance
-  embed: async (text: string) => {
-    const arr = new Float32Array(384);
-    arr.fill(Math.sin(text.length));
-    return arr;
-  },
-}));
+mockEmbeddings();
 
-beforeEach(() => {
-  // Clean up any leftover state from a previous run
-  closeDatabase();
-  if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true });
-
-  // Create all memory subdirectories the write pipeline may use
-  for (const sub of ["conventions", "decisions", "gotchas", "patterns", "sessions"]) {
-    mkdirSync(join(TEST_DIR, ".context", "memory", sub), { recursive: true });
-  }
-  mkdirSync(join(TEST_DIR, ".kontex-index"), { recursive: true });
-  mkdirSync(join(TEST_DIR, ".kontex-log"), { recursive: true });
-
-  getDatabase(TEST_DIR); // init DB
-});
-
-afterEach(() => {
-  closeDatabase();
-  if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true });
-});
+beforeEach(() => setupTestDir(TEST_DIR));
+afterEach(() => teardownTestDir(TEST_DIR));
 
 describe("Memory Write Pipeline", () => {
   test("writes a verified memory when confidence is high", async () => {
