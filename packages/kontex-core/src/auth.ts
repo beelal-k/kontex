@@ -5,10 +5,13 @@
  * for secure token storage in the OS native keychain.
  */
 
-import keytar from "keytar";
-
 const KEYCHAIN_SERVICE = "kontex";
 const KEYCHAIN_ACCOUNT = "github-oauth";
+
+async function getKeytar() {
+  const mod = await import("keytar");
+  return mod.default;
+}
 
 /**
  * GitHub OAuth App client_id. Override via KONTEX_GITHUB_CLIENT_ID env var
@@ -36,6 +39,7 @@ export async function login(): Promise<string> {
   });
 
   const { token } = await auth({ type: "oauth" });
+  const keytar = await getKeytar();
   await keytar.setPassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT, token);
 
   const username = await fetchGitHubUsername(token);
@@ -48,6 +52,7 @@ export async function login(): Promise<string> {
  * Removes the GitHub OAuth token from the OS keychain.
  */
 export async function logout(): Promise<void> {
+  const keytar = await getKeytar();
   const deleted = await keytar.deletePassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT);
   console.log(deleted ? "✓ Token removed from keychain" : "No token found in keychain");
 }
@@ -56,6 +61,7 @@ export async function logout(): Promise<void> {
  * Retrieves the stored GitHub OAuth token, or null if not authenticated.
  */
 export async function getToken(): Promise<string | null> {
+  const keytar = await getKeytar();
   return keytar.getPassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT);
 }
 
