@@ -4,6 +4,9 @@
   "description": "CLI for kontex — thin commander wrapper over kontex-core",
   "type": "module",
   "license": "MIT",
+  "engines": {
+    "bun": ">=1.1.0"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ArekBee/kontex.git",

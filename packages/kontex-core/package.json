@@ -4,6 +4,9 @@
   "description": "Core engine for kontex — quality gate, MCP server, compilation, embedding, storage, hooks, auth",
   "type": "module",
   "license": "MIT",
+  "engines": {
+    "bun": ">=1.1.0"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ArekBee/kontex.git",
