@@ -106,6 +106,26 @@ describe("Memory Invalidation and ADRs", () => {
     expect(entry?.stale).toBe(true);
   });
 
+  test("logDecision stores author and non-empty tags in DB row (not SQL defaults)", async () => {
+    const r = await logDecision({
+      title: "Use TypeScript everywhere for type safety",
+      context: "We want type safety across the codebase",
+      decision: "Migrate all JS to TS",
+      rationale: "Fewer runtime bugs",
+      affected_paths: ["src/"],
+    }, TEST_DIR, DEFAULT_CONFIG);
+
+    expect(r.success).toBe(true);
+    const db = getDatabase(TEST_DIR);
+    const row = db.prepare("SELECT author, tags FROM memories WHERE uri = ?").get(r.uri!) as { author: string; tags: string };
+    expect(row).not.toBeNull();
+    // author is set by getGitAuthor — should be a non-empty string ("unknown" or real email), not the SQL default ''
+    expect(row.author.length).toBeGreaterThan(0);
+    // tags are extracted from the title+decision text — should be a non-empty JSON array, not '[]'
+    const tags = JSON.parse(row.tags) as string[];
+    expect(tags.length).toBeGreaterThan(0);
+  });
+
   test("ADR numbering uses highest existing number, not count", async () => {
     const r1 = await logDecision({ title: "Decision Alpha", context: "ctx", decision: "dec", rationale: "rat" }, TEST_DIR, DEFAULT_CONFIG);
     const r2 = await logDecision({ title: "Decision Beta", context: "ctx", decision: "dec", rationale: "rat" }, TEST_DIR, DEFAULT_CONFIG);

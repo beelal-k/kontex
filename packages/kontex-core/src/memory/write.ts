@@ -78,7 +78,7 @@ export async function writeMemory(
   if (!existsSync(fileDir)) mkdirSync(fileDir, { recursive: true });
   writeFileSync(filePath, fileContent, "utf-8");
 
-  await indexMemoryEntry(uri, entry.content, entry.type, verified, entry.confidence, entry.affected_paths ?? [], db, l0, l1, "");
+  await indexMemoryEntry(uri, entry.content, entry.type, verified, entry.confidence, entry.affected_paths ?? [], db, l0, l1, "", author, frontmatter.tags, frontmatter.global, frontmatter.stale, frontmatter.ref_count);
   logQualityEvent(logPath, "WRITTEN", `${uri} (verified: ${verified})`);
   return { success: true, uri, verified };
 }
@@ -136,7 +136,7 @@ export async function logDecision(adr: ADRInput, workspaceRoot: string, _config:
 
   const db = getDatabase(workspaceRoot);
   const adrContent = `${adr.title} ${adr.decision} ${adr.context}`;
-  await indexMemoryEntry(uri, adrContent, "decision", true, 0.95, adr.affected_paths ?? [], db, l0, body, "");
+  await indexMemoryEntry(uri, adrContent, "decision", true, 0.95, adr.affected_paths ?? [], db, l0, body, "", author, frontmatter.tags, frontmatter.global, frontmatter.stale, frontmatter.ref_count);
   return { success: true, uri, verified: true };
 }
 
@@ -174,10 +174,15 @@ async function indexMemoryEntry(
   l0: string = "",
   l1: string = "",
   l2: string = "",
+  author: string = "",
+  tags: string[] = [],
+  global: boolean = false,
+  stale: boolean = false,
+  refCount: number = 0,
 ): Promise<void> {
   db.prepare(
-    `INSERT OR REPLACE INTO memories (uri, content, type, l0, l1, l2, verified, confidence, affected_paths, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
-  ).run(uri, content, type, l0, l1, l2, verified ? 1 : 0, confidence, JSON.stringify(affectedPaths));
+    `INSERT OR REPLACE INTO memories (uri, content, type, l0, l1, l2, verified, confidence, affected_paths, author, tags, global, stale, ref_count, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+  ).run(uri, content, type, l0, l1, l2, verified ? 1 : 0, confidence, JSON.stringify(affectedPaths), author, JSON.stringify(tags), global ? 1 : 0, stale ? 1 : 0, refCount);
   try {
     const embedding = await embed(content);
     db.prepare(`INSERT OR REPLACE INTO memory_embeddings (uri, embedding) VALUES (?, ?)`).run(uri, Buffer.from(embedding.buffer));
