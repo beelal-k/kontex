@@ -21,7 +21,14 @@ export function mockEmbeddings(): void {
     embed: async (text: string) => {
       const arr = new Float32Array(384);
       for (let i = 0; i < 384; i++) {
-        arr[i] = Math.sin(i * 2.3999 + (text.charCodeAt(i % text.length) || 0) * 0.1);
+        // Per-dimension hash mixing position and all text chars — ensures distinct
+        // strings (even short ones like "A1" vs "A2") produce low cosine similarity.
+        let h = (i + 1) * 2654435761;
+        for (let j = 0; j < text.length; j++) {
+          h = Math.imul(h ^ text.charCodeAt(j), 2246822519);
+        }
+        h = h >>> 0;
+        arr[i] = h / 0x80000000 - 1; // map to [-1, 1]
       }
       return arr;
     },
