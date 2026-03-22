@@ -20,7 +20,9 @@ export function mockEmbeddings(): void {
     initEmbeddingModel: async () => {},
     embed: async (text: string) => {
       const arr = new Float32Array(384);
-      arr.fill(Math.sin(text.length));
+      for (let i = 0; i < 384; i++) {
+        arr[i] = Math.sin(i * 2.3999 + (text.charCodeAt(i % text.length) || 0) * 0.1);
+      }
       return arr;
     },
   }));
