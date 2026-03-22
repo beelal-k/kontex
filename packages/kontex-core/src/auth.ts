@@ -11,10 +11,11 @@ const KEYCHAIN_SERVICE = "kontex";
 const KEYCHAIN_ACCOUNT = "github-oauth";
 
 /**
- * Replace this with your registered GitHub OAuth App client_id.
+ * GitHub OAuth App client_id. Override via KONTEX_GITHUB_CLIENT_ID env var
+ * to use your own registered App (e.g., for forks or enterprise deployments).
  * Register at: https://github.com/settings/developers
  */
-const GITHUB_CLIENT_ID = "Ov23liMXcybhETe03nNJ";
+const GITHUB_CLIENT_ID = process.env.KONTEX_GITHUB_CLIENT_ID ?? "Ov23liMXcybhETe03nNJ";
 
 /**
  * Runs the full GitHub OAuth Device Flow.
