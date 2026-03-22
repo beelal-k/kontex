@@ -29,13 +29,21 @@ const SECRET_PATTERNS: SecretPattern[] = [
 
 // ─── Public API ────────────────────────────────────────────────────────────
 
+const extraPatternCache = new Map<string, SecretPattern[]>();
+
 function buildExtraPatterns(extraPatterns: string[]): SecretPattern[] {
+  if (extraPatterns.length === 0) return [];
+  const cacheKey = extraPatterns.join("\0");
+  const cached = extraPatternCache.get(cacheKey);
+  if (cached) return cached;
+
   const result: SecretPattern[] = [];
   for (const pattern of extraPatterns) {
     try {
       result.push({ name: `custom:${pattern.slice(0, 30)}`, regex: new RegExp(pattern) });
     } catch { /* invalid regex — skip */ }
   }
+  extraPatternCache.set(cacheKey, result);
   return result;
 }
 
